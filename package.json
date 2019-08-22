@@ -2,7 +2,7 @@
   "name": "starsim-3d",
   "version": "0.0.1",
   "scripts": {
-    "start": "node --experimental-modules ./src/index.mjs"
+    "start": "node --experimental-modules ./src/programm.mjs"
   },
   "dependencies": {
     "nvk": "latest",
