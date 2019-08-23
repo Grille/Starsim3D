@@ -1,7 +1,7 @@
 export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
-    this.positionBuffer = null;
+    this.storageBuffer = null;
     this.computeShader = null;
     this.computePipeline = null;
   }
@@ -20,14 +20,12 @@ _prot.setup = function () {
   this.computeShader = snvk.createShader(compCreateInfo);
 
   let bufferCreateInfo = {
-    type: snvk.TYPE_FLOAT32,
-    size: 3,
-    length: 1E1,
+    size: 1E6 * 16,
     usage: snvk.BUFFER_USAGE_STORAGE,
     readable: true,
   }
-  this.positionBuffer = snvk.createBuffer(bufferCreateInfo);
-  let stroageBinding = snvk.getBinding(this.positionBuffer, 0);
+  this.storageBuffer = snvk.createBuffer(bufferCreateInfo);
+  let stroageBinding = snvk.getBinding(this.storageBuffer, 0);
 
   let computePipelineCreateInfo = {
     shader: this.computeShader,
@@ -38,14 +36,14 @@ _prot.setup = function () {
 _prot.compute = function () {
   let { snvk } = this;
 
-  snvk.compute(this.computePipeline,1);
-  let array = new Float32Array(snvk.bufferReadData(this.positionBuffer));
+  snvk.compute(this.computePipeline, 4);
+  let array = new Float32Array(snvk.bufferReadData(this.storageBuffer, 0, 4 * 16));
   console.log(array);
 }
 _prot.shutdown = function () {
   let { snvk } = this;
 
   snvk.destroyComputePipeline(this.computePipeline);
-  snvk.destroyBuffer(this.positionBuffer);
+  snvk.destroyBuffer(this.storageBuffer);
   snvk.destroyShader(this.computeShader);
 }

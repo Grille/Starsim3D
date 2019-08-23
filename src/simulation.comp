@@ -3,9 +3,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define COUNT 10
-#define WORKGROUP_SIZE 32
-layout (local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1 ) in;
+#define COUNT 4
+#define WORKGROUP_SIZE 1
 
 struct Star{
   vec3 pos;
@@ -20,19 +19,13 @@ layout(std140, binding = 0) buffer buf
 };
 
 void main() {
-
-  /*
-  In order to fit the work into workgroups, some unnecessary threads are launched.
-  We terminate those threads here. 
-  */
-
-  if(gl_GlobalInvocationID.x >= COUNT || gl_GlobalInvocationID.y >= COUNT)
+  //terminate unnecessary threads
+  if(gl_GlobalInvocationID.x >= COUNT)
     return;
 
   float x = float(gl_GlobalInvocationID.x) / float(COUNT);
-  float y = float(gl_GlobalInvocationID.y) / float(COUNT);
   
-  uint index = int(COUNT * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x);
+  int index = int(gl_GlobalInvocationID.x);
   stars[index].pos = vec3(9,9,9);
   stars[index].id = gl_GlobalInvocationID.x;
   //stars[index].vel = vec3(2,4,2);
