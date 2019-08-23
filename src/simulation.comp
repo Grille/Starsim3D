@@ -6,15 +6,14 @@
 #define COUNT 4
 #define WORKGROUP_SIZE 1
 
-struct Star{
+struct Star {
   vec3 pos;
   float id;
- // vec3 vel;
-  //float mass;
+  vec3 vel;
+  float mass;
 };
 
-layout(std140, binding = 0) buffer buf
-{
+layout(std140, binding = 0) buffer buf {
    Star stars[];
 };
 
@@ -23,10 +22,31 @@ void main() {
   if(gl_GlobalInvocationID.x >= COUNT)
     return;
 
-  float x = float(gl_GlobalInvocationID.x) / float(COUNT);
+  //float x = float(gl_GlobalInvocationID.x) / float(COUNT);
   
   int index = int(gl_GlobalInvocationID.x);
-  stars[index].pos = vec3(9,9,9);
+  Star star1 = stars[index];
+
+  for (int i = index; i < COUNT; i++){
+    Star star2 = stars[i];
+
+/*
+    vec3 dist = star1.pos - star2.pos;
+
+    float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
+    float distAbs = sqrt(dist.x*dist.x + dist.y*dist.y + dist.z*dist.z);
+
+    vec3 fv = dist / distSum;
+
+    float fg = star1.mass * star2.mass / distAbs;
+    float a1 = fg / star1.mass;
+    float a2 = fg / star2.mass;
+
+    stars[index].vel -= fv * a1;
+    stars[i].vel += fv * a2;
+    */
+  }
+  stars[index].pos += stars[index].vel;
   stars[index].id = gl_GlobalInvocationID.x;
   //stars[index].vel = vec3(2,4,2);
   //stars[index].mass = 9.;

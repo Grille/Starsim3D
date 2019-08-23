@@ -46,10 +46,15 @@ _prot.setup = function () {
   }
 
 }
+_prot.pullData = function (simulation) {
+  let { snvk } = this;
+
+  //snvk.copyBuffer(simulation.storageBuffer, this.vertexBuffer);
+}
 _prot.render = function () {}
 _prot.recreate = function () {}
 _prot.shutdown = function () {
   let { snvk } = this;
-  
+
   snvk.destroyBuffer(this.vertexBuffer);
 }
