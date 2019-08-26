@@ -2,14 +2,14 @@ export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
     this.storageBuffer = null;
+    this.commandBuffer = null;
     this.computeShader = null;
     this.computePipeline = null;
     this.count = 0;
   }
 }
-let _prot = Simulation.prototype;
 
-_prot.setup = function () {
+Simulation.prototype.setup = function () {
   let { snvk } = this;
 
   let source = snvk.loadShaderSrc(`./src/simulation.comp`);
@@ -33,8 +33,33 @@ _prot.setup = function () {
     bindings: [stroageBinding],
   }
   this.computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
+
+  let commandCreateInfo = {
+    level: snvk.COMMAND_LEVEL_PRIMARY,
+    usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
+  }
+  this.commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
+
+  snvk.cmdBegin(this.commandBuffer);
+
+  snvk.cmdBindComputePipeline(this.commandBuffer, this.computePipeline);
+  snvk.cmdDispatch(this.commandBuffer, this.count);
+
+  snvk.cmdEnd(this.commandBuffer);
+
 }
-_prot.pushStars = function (stars) {
+
+Simulation.prototype.compute = function () {
+  let { snvk } = this;
+
+  let submitInfo = {
+    commandBuffer: this.commandBuffer,
+    blocking: true,
+  }
+  snvk.submit(submitInfo);
+}
+
+Simulation.prototype.pushStars = function (stars) {
   let { snvk } = this;
 
   this.count = stars.length;
@@ -51,17 +76,14 @@ _prot.pushStars = function (stars) {
   }
   snvk.bufferSubData(this.storageBuffer, 0, data, 0, this.count * 32);
 }
-_prot.compute = function () {
-  let { snvk } = this;
 
-  snvk.compute(this.computePipeline, this.count);
-}
-_prot.readData = function () {
+Simulation.prototype.readData = function () {
   let { snvk } = this;
 
   return new Float32Array(snvk.bufferReadData(this.storageBuffer, 0, this.count * 32));
 }
-_prot.readStars = function() {
+
+Simulation.prototype.readStars = function() {
   let data = this.readData();
   let stars = [];
   for (let i = 0;i<data.length/8;i++){
@@ -83,7 +105,8 @@ _prot.readStars = function() {
   }
   return stars;
 }
-_prot.shutdown = function () {
+
+Simulation.prototype.shutdown = function () {
   let { snvk } = this;
 
   snvk.destroyComputePipeline(this.computePipeline);

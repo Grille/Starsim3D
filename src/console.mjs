@@ -3,11 +3,11 @@ export default class Console {
 
   }
 }
-let _prot = Console.prototype;
 
-_prot.write = function(){
+Console.prototype.write = function(){
 
 }
-_prot.writeLn = function(){
+
+Console.prototype.writeLn = function(){
   
 }

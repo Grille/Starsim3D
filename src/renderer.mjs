@@ -15,9 +15,8 @@ export default class Renderer{
     this.fragShader = null;
   }
 }
-let _prot = Renderer.prototype;
 
-_prot.setup = function () {
+Renderer.prototype.setup = function () {
   let { snvk } = this;
 
   /*
@@ -46,14 +45,18 @@ _prot.setup = function () {
   }
 
 }
-_prot.pullData = function (simulation) {
+
+Renderer.prototype.pullData = function (simulation) {
   let { snvk } = this;
 
   //snvk.copyBuffer(simulation.storageBuffer, this.vertexBuffer);
 }
-_prot.render = function () {}
-_prot.recreate = function () {}
-_prot.shutdown = function () {
+
+Renderer.prototype.render = function () {}
+
+Renderer.prototype.recreate = function () {}
+
+Renderer.prototype.shutdown = function () {
   let { snvk } = this;
 
   snvk.destroyBuffer(this.vertexBuffer);
