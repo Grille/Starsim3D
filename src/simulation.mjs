@@ -43,10 +43,9 @@ Simulation.prototype.setup = function () {
   snvk.cmdBegin(this.commandBuffer);
 
   snvk.cmdBindComputePipeline(this.commandBuffer, this.computePipeline);
-  snvk.cmdDispatch(this.commandBuffer, this.count);
+  snvk.cmdDispatch(this.commandBuffer, 2);
 
   snvk.cmdEnd(this.commandBuffer);
-
 }
 
 Simulation.prototype.compute = function () {
@@ -94,6 +93,7 @@ Simulation.prototype.readStars = function() {
         y: data[offset + 1],
         z: data[offset + 2],
       },
+      id: data[offset + 3],
       vel: {
         x: data[offset + 4],
         y: data[offset + 5],

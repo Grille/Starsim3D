@@ -3,23 +3,34 @@ import Simulation from "./simulation.mjs"
 import Renderer from "./renderer.mjs"
 
 let snvk = new SNVK();
+
+snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
+snvk.startVulkan();
+let {window} = snvk;
 let simulation = new Simulation(snvk);
 let renderer = new Renderer(snvk);
-
-snvk.startWindow({ width: 480, height: 320, title: "Starsim-3D" });
-snvk.startVulkan();
 
 simulation.setup();
 renderer.setup();
 
 let stars = [
   {
-    pos: { x: -2, y: 0, z: 0 },
+    pos: { x: -0.5, y: -0.5, z: 0 },
     vel: { x: 0, y: 0, z: 0 },
     mass:1,
   },
   {
-    pos: { x: 2, y: 0, z: 0 },
+    pos: { x: 0.5, y: 0.5, z: 0 },
+    vel: { x: 0, y: 0, z: 0 },
+    mass:1,
+  },
+  {
+    pos: { x: -0.5, y: 0.5, z: 0 },
+    vel: { x: 0, y: 0, z: 0 },
+    mass:1,
+  },
+  {
+    pos: { x: 0.5, y: -0.5, z: 0 },
     vel: { x: 0, y: 0, z: 0 },
     mass:1,
   },
@@ -38,7 +49,26 @@ renderer.render();
 
 console.log(simulation.readStars());
 
-simulation.shutdown();
-renderer.shutdown();
+eventLoop();
 
-snvk.shutdownVulkan();
+function shutdown() {
+  simulation.shutdown();
+  renderer.shutdown();
+  
+  snvk.shutdownVulkan();
+}
+
+function eventLoop() {
+  if (window.shouldClose()) {
+    simulation.shutdown();
+    renderer.shutdown();
+    snvk.shutdownVulkan();
+  }
+  else {
+    window.pollEvents();
+    if (renderer.ready) {
+
+    }
+    setTimeout(eventLoop, 0);
+  }
+}
