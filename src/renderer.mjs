@@ -2,6 +2,7 @@ export default class Renderer{
   constructor(snvk){
     this.snvk = snvk;
     this.window = snvk.window;
+    this.surface = null;
 
     this.vertexBuffer = null;
     this.vertexBinding = null;
@@ -10,6 +11,7 @@ export default class Renderer{
       velocity:null,
       mass:null,
     }
+    this.renderPass = null;
     this.renderPipeline = null;
 
     this.vertShader = null;
@@ -60,8 +62,12 @@ Renderer.prototype.setup = function () {
     snvk.getAttribute(this.vertexBinding, 2, snvk.TYPE_FLOAT32, 3, 4 * 4), //velocity
     snvk.getAttribute(this.vertexBinding, 3, snvk.TYPE_FLOAT32, 1, 4 * 7), //mass
   ]
+}
 
-  let renderPass = snvk.createRenderPass();
+Renderer.prototype.createPipeline = function (count) {
+  let { snvk } = this;
+
+  this.renderPass = snvk.createRenderPass();
 
   let assemblyInfo = {
     topology: snvk.TOPOLOGY_POINT_LIST,
@@ -72,22 +78,22 @@ Renderer.prototype.setup = function () {
   let pipelineCreateInfo = {
     assemblyInfo: assemblyInfo,
     rasterizationInfo: rasterizationInfo,
-    renderPass: renderPass,
+    renderPass: this.renderPass,
     viewport: snvk.createViewport(),
     shaders: [this.vertShader, this.fragShader],
     bindings: [this.vertexBinding],
     attributes: [...this.attributes],
-    backgroundColor: [0, 0, 0.5, 1],
+    backgroundColor: [0, 0, 0.0, 1],
   }
   this.renderPipeline = snvk.createRenderPipeline(pipelineCreateInfo);
 
-  let surface = snvk.createSurface();
+  this.surface = snvk.createSurface();
 
   let swapchainCreateInfo = {
     width: this.window.width,
     height: this.window.height,
-    renderPass: renderPass,
-    surface: surface,
+    renderPass: this.renderPass,
+    surface: this.surface,
   }
   this.swapchain = snvk.createSwapchain(swapchainCreateInfo);
 
@@ -108,7 +114,7 @@ Renderer.prototype.setup = function () {
 
     snvk.cmdBeginRender(command, this.renderPipeline, framebuffer);
 
-    snvk.cmdDrawArrays(command, 0, 4);
+    snvk.cmdDrawArrays(command, 0, count);
 
     snvk.cmdEndRender(command);
 
@@ -119,10 +125,32 @@ Renderer.prototype.setup = function () {
   this.ready = true;
 }
 
+Renderer.prototype.destroyPipeline = function () {
+  let { snvk } = this;
+
+  snvk.waitForIdle();
+
+  for (let i = 0;i<this.commandbuffers.length;i++){
+    snvk.destroyCommandBuffer(this.commandbuffers[i]);
+  }
+
+  snvk.destroySemaphore(this.frameAvailable);
+  snvk.destroySemaphore(this.renderAvailable);
+
+  snvk.destroySwapchain(this.swapchain);
+  snvk.destroySurface(this.surface);
+
+  snvk.destroyRenderPipeline(this.renderPipeline);
+  snvk.destroyRenderPass(this.renderPass);
+
+  this.ready = false;
+}
+
 Renderer.prototype.pullData = function (simulation) {
   let { snvk } = this;
 
-  snvk.copyBuffer(simulation.storageBuffer, this.vertexBuffer);
+  let size = simulation.storageBuffer.size;
+  snvk.copyBuffer(simulation.storageBuffer, 0, this.vertexBuffer, 0, size);
 }
 
 Renderer.prototype.render = function () {

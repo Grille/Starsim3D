@@ -3,7 +3,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define COUNT 2
+#define COUNT 4000
 #define WORKGROUP_SIZE 1
 
 struct Star {
@@ -27,13 +27,14 @@ void main() {
   int index = int(gl_GlobalInvocationID.x);
   Star star1 = stars[index];
 
+  
   for (int i = index + 1; i < COUNT; i++){
     Star star2 = stars[i];
 
     vec3 dist = star1.pos - star2.pos;
 
     float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
-    float distAbs = sqrt(dist.x*dist.x + dist.y*dist.y + dist.z*dist.z);
+    float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
     vec3 fv = dist / distSum;
 
@@ -41,11 +42,16 @@ void main() {
     float a1 = fg / star1.mass;
     float a2 = fg / star2.mass;
 
-    stars[index].vel -= fv * a1;
+    stars[index].vel -= fv * a1 ;
     stars[i].vel += fv * a2;
   }
-  stars[index].pos += stars[index].vel;
-  stars[index].id = gl_GlobalInvocationID.x;
+
+  if (index == COUNT-1){
+    for (int i = 0; i<COUNT; i++){
+      stars[i].pos += stars[i].vel * 0.01;
+      stars[i].id = i;
+    }
+  }
   //stars[index].vel = vec3(2,4,2);
   //stars[index].mass = 9.;
   // store the rendered mandelbrot set into a storage buffer:
