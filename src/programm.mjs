@@ -5,7 +5,7 @@ import Renderer from "./renderer.mjs"
 let snvk = new SNVK();
 let lastResize = 0;
 
-let count = 10;
+let count = 1000;
 
 snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
 snvk.startVulkan();

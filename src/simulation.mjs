@@ -1,3 +1,5 @@
+import fs from "fs"
+
 export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
@@ -12,28 +14,49 @@ export default class Simulation {
   }
 }
 
-Simulation.prototype.setup = function (buffers) {
+Simulation.prototype.createPipeline = function(descriptors, source, entryPoint) {
   let { snvk } = this;
 
-  let source = snvk.loadShaderSrc(`./src/simulation.comp`);
+  let reg = new RegExp(`void[\\s]+${entryPoint}[\\s]*[(]`, `g`);
+  let code = source.replace((reg), "void main(");
+
   let compCreateInfo = {
-    source: source,
+    source: code,
     format: snvk.SHADER_SRC_GLSL,
     stage: snvk.SHADER_STAGE_COMPUTE,
   }
-  this.computeShader = snvk.createShader(compCreateInfo);
+  let shader = snvk.createShader(compCreateInfo);
+
+  let computePipelineCreateInfo = {
+    shader: shader,
+    descriptors: descriptors,
+  }
+  let pipeline = snvk.createComputePipeline(computePipelineCreateInfo);
+
+  return {
+    pipeline,
+    shader,
+  }
+}
+Simulation.prototype.setup = function (buffers) {
+  let { snvk } = this;
+
+  let source = fs.readFileSync("./src/simulation.comp","utf8");
 
   this.storageBuffer = buffers.storageBuffer;
   let stroageDescriptor = snvk.getDescriptor(this.storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE, snvk.SHADER_STAGE_COMPUTE);
   this.uniformBuffer = buffers.uniformBuffer;
   let uniformDescriptor = snvk.getDescriptor(this.uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
+  let descriptors = [stroageDescriptor, uniformDescriptor];
 
+  this.pipeline = this.createPipeline(descriptors, source, "main");
+/*
   let computePipelineCreateInfo = {
     shader: this.computeShader,
     descriptors: [stroageDescriptor, uniformDescriptor],
   }
   this.computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
-
+*/
   this.running = snvk.createFence();
 }
 
@@ -56,7 +79,7 @@ Simulation.prototype.createCommand = function (count) {
 
   snvk.cmdBegin(this.commandBuffer);
 
-  snvk.cmdBindComputePipeline(this.commandBuffer, this.computePipeline);
+  snvk.cmdBindComputePipeline(this.commandBuffer, this.pipeline.pipeline);
   snvk.cmdDispatch(this.commandBuffer, this.count);
 
   snvk.cmdEnd(this.commandBuffer);
@@ -135,7 +158,7 @@ Simulation.prototype.shutdown = function () {
   //snvk.waitForFence(this.running, 60 * 1E3);
   snvk.destroyFence(this.running);
   snvk.destroyCommandBuffer(this.commandBuffer);
-  snvk.destroyComputePipeline(this.computePipeline);
+  snvk.destroyComputePipeline(this.pipeline.pipeline);
   snvk.destroyBuffer(this.storageBuffer);
-  snvk.destroyShader(this.computeShader);
+  snvk.destroyShader(this.pipeline.shader);
 }

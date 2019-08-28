@@ -21,6 +21,7 @@ layout(location = 0) out vec4 vertexColor;
 
 void main(){
 
+  //discard;
   vertexColor = vec4(1*(int(id)%3), 1*(int(id)%2), 1, 1);
   vec3 position = vec3(pos.x / width,pos.y / height,pos.z);
   gl_Position = vec4(position, 1.0);

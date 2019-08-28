@@ -39,11 +39,12 @@ void main() {
     float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
     float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
+    /*
     if (distAbs < 20){
       stars[index].mass += stars[i].mass;
       stars[i].mass = 0.01;
-
     }
+    */
 
     vec3 fv = dist / distSum;
 
@@ -65,4 +66,8 @@ void main() {
   //stars[index].mass = 9.;
   // store the rendered mandelbrot set into a storage buffer:
   //imageData[COUNT * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x].value = color;
+}
+
+void collision(inout uint f){
+
 }
