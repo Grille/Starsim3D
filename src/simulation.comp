@@ -3,9 +3,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define COUNT 4000
-#define WORKGROUP_SIZE 1
-
 struct Star {
   vec3 pos;
   float id;
@@ -13,13 +10,19 @@ struct Star {
   float mass;
 };
 
-layout(std140, binding = 0) buffer buf {
+layout(binding = 0, std140) buffer buf {
    Star stars[];
+};
+
+layout(binding = 1) uniform ub {
+  uint count;
+  uint width;
+  uint height;
 };
 
 void main() {
   //terminate unnecessary threads
-  if(gl_GlobalInvocationID.x >= COUNT)
+  if(gl_GlobalInvocationID.x >= count)
     return;
 
   //float x = float(gl_GlobalInvocationID.x) / float(COUNT);
@@ -28,13 +31,19 @@ void main() {
   Star star1 = stars[index];
 
   
-  for (int i = index + 1; i < COUNT; i++){
+  for (int i = index + 1; i < count; i++){
     Star star2 = stars[i];
 
     vec3 dist = star1.pos - star2.pos;
 
     float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
     float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
+
+    if (distAbs < 20){
+      stars[index].mass += stars[i].mass;
+      stars[i].mass = 0.01;
+
+    }
 
     vec3 fv = dist / distSum;
 
@@ -46,9 +55,9 @@ void main() {
     stars[i].vel += fv * a2;
   }
 
-  if (index == COUNT-1){
-    for (int i = 0; i<COUNT; i++){
-      stars[i].pos += stars[i].vel * 0.01;
+  if (index == count - 1){
+    for (int i = 0; i < count; i++){
+      stars[i].pos += stars[i].vel * 0.5;
       stars[i].id = i;
     }
   }

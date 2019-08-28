@@ -4,6 +4,8 @@ export default class Renderer{
     this.window = snvk.window;
     this.surface = null;
 
+    this.uniformBuffer = null;
+    this.uniformDescriptor = null;
     this.vertexBuffer = null;
     this.vertexBinding = null;
     this.attributes = {
@@ -11,6 +13,7 @@ export default class Renderer{
       velocity:null,
       mass:null,
     }
+
     this.renderPass = null;
     this.renderPipeline = null;
 
@@ -28,7 +31,7 @@ export default class Renderer{
   }
 }
 
-Renderer.prototype.setup = function () {
+Renderer.prototype.setup = function (buffers) {
   let { snvk } = this;
 
   let vertSource = snvk.loadShaderSrc(`./src/renderer.vert`);
@@ -47,21 +50,18 @@ Renderer.prototype.setup = function () {
   }
   this.fragShader = snvk.createShader(fragCreateInfo);
   
-
-  let stride = 32;
-
-  let bufferCreateInfo = {
-    size: 1E6 * stride,
-    usage: snvk.BUFFER_USAGE_VERTEX,
-  }
-  this.vertexBuffer = snvk.createBuffer(bufferCreateInfo);
-  this.vertexBinding = snvk.getBinding(this.vertexBuffer, 0, stride);
+  this.vertexBuffer = buffers.storageBuffer;//snvk.createBuffer(bufferCreateInfo);
+  this.vertexBinding = snvk.getBinding(this.vertexBuffer, 0, 32);
   this.attributes = [
     snvk.getAttribute(this.vertexBinding, 0, snvk.TYPE_FLOAT32, 3, 0), //position
     snvk.getAttribute(this.vertexBinding, 1, snvk.TYPE_FLOAT32, 1, 4 * 3), //enabled
     snvk.getAttribute(this.vertexBinding, 2, snvk.TYPE_FLOAT32, 3, 4 * 4), //velocity
     snvk.getAttribute(this.vertexBinding, 3, snvk.TYPE_FLOAT32, 1, 4 * 7), //mass
   ]
+
+  this.uniformBuffer = buffers.uniformBuffer;
+  this.uniformDescriptor = snvk.getDescriptor(this.uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
+
 }
 
 Renderer.prototype.createPipeline = function (count) {
@@ -83,6 +83,7 @@ Renderer.prototype.createPipeline = function (count) {
     shaders: [this.vertShader, this.fragShader],
     bindings: [this.vertexBinding],
     attributes: [...this.attributes],
+    descriptors: [this.uniformDescriptor],
     backgroundColor: [0, 0, 0.0, 1],
   }
   this.renderPipeline = snvk.createRenderPipeline(pipelineCreateInfo);

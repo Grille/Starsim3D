@@ -1,6 +1,7 @@
 export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
+    this.uniformBuffer = null;
     this.storageBuffer = null;
     this.commandBuffer = null;
     this.computeShader = null;
@@ -11,7 +12,7 @@ export default class Simulation {
   }
 }
 
-Simulation.prototype.setup = function () {
+Simulation.prototype.setup = function (buffers) {
   let { snvk } = this;
 
   let source = snvk.loadShaderSrc(`./src/simulation.comp`);
@@ -22,17 +23,14 @@ Simulation.prototype.setup = function () {
   }
   this.computeShader = snvk.createShader(compCreateInfo);
 
-  let bufferCreateInfo = {
-    size: 1E6 * 32,
-    usage: snvk.BUFFER_USAGE_STORAGE,
-    readable: true,
-  }
-  this.storageBuffer = snvk.createBuffer(bufferCreateInfo);
-  let stroageBinding = snvk.getDescriptor(this.storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE);
+  this.storageBuffer = buffers.storageBuffer;
+  let stroageDescriptor = snvk.getDescriptor(this.storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE, snvk.SHADER_STAGE_COMPUTE);
+  this.uniformBuffer = buffers.uniformBuffer;
+  let uniformDescriptor = snvk.getDescriptor(this.uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
 
   let computePipelineCreateInfo = {
     shader: this.computeShader,
-    descriptors: [stroageBinding],
+    descriptors: [stroageDescriptor, uniformDescriptor],
   }
   this.computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 
@@ -71,9 +69,14 @@ Simulation.prototype.compute = function () {
 
   let submitInfo = {
     commandBuffer: this.commandBuffer,
-    signalFence: this.running,
+    blocking: false,
+    //signalFence: this.running,
   }
   snvk.submit(submitInfo);
+
+  //snvk.waitForFence(this.running);
+
+  //snvk.waitForIdle();
 }
 
 Simulation.prototype.pushStars = function (stars) {
@@ -129,7 +132,7 @@ Simulation.prototype.shutdown = function () {
 
   snvk.waitForIdle();
 
-  snvk.waitForFence(this.running, 60 * 1E3);
+  //snvk.waitForFence(this.running, 60 * 1E3);
   snvk.destroyFence(this.running);
   snvk.destroyCommandBuffer(this.commandBuffer);
   snvk.destroyComputePipeline(this.computePipeline);
