@@ -70,9 +70,14 @@ export default class Renderer{
   submitUniform(input) {
     let { uniform } = this;
 
-    uniform.setUint32(0, input.count);
-    uniform.setUint32(4, input.width);
-    uniform.setUint32(8, input.height);
+    let offset = 0;
+    uniform.setUint32(0 * 4, input.count);
+    uniform.setUint32(1 * 4, input.width);
+    uniform.setUint32(2 * 4, input.height);
+    uniform.setUint32(3 * 4, input.height);
+
+    uniform.setMat4(4 * 4, input.view);
+    uniform.setMat4((4 + 16) * 4, input.projection);
 
     uniform.submit();
   }
@@ -88,9 +93,13 @@ export default class Renderer{
     let rasterizationInfo = {
       polygonMode: snvk.POLYGON_MODE_POINT,
     }
+    let blendingInfo = {
+      enabled: false,
+    }
     let pipelineCreateInfo = {
       assemblyInfo: assemblyInfo,
       rasterizationInfo: rasterizationInfo,
+      blendingInfo: blendingInfo,
       renderPass: this.renderPass,
       viewport: snvk.createViewport(),
       shaders: [this.vertShader, this.fragShader],

@@ -6,7 +6,8 @@
   },
   "dependencies": {
     "nvk": "latest",
-    "nvk-essentials": "latest"
+    "nvk-essentials": "latest",
+    "gl-matrix": "^2.8.1"
   },
   "author": "paul hirch",
   "license": "MIT"

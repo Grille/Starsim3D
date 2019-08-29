@@ -27,7 +27,7 @@ export default class Uniform{
     this.view.getFloat32(offset, value, true);
   }
   setMat4(offset, value) {
-    uniformData.set(new Uint8Array(value.buffer), offset);
+    this.data.set(new Uint8Array(value.buffer), offset);
   }
   submit() {
     let {snvk} = this;

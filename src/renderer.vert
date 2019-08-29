@@ -5,25 +5,29 @@ layout(binding = 1) uniform ub {
   uint count;
   uint width;
   uint height;
+  mat4 view;
+  mat4 projection;
 };
 
-layout(location = 0) in vec3 pos;
-layout(location = 1) in float id;
-layout(location = 2) in vec3 vel;
-layout(location = 3) in float mass;
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in float aID;
+layout(location = 2) in vec3 aVelocity;
+layout(location = 3) in float aMass;
 
 out gl_PerVertex {
   vec4 gl_Position;
   float gl_PointSize;
 };
 
-layout(location = 0) out vec4 vertexColor;
+layout(location = 0) out vec4 vColor;
 
 void main(){
+  vec4 cameraPosition = view * vec4(aPosition, 1.0);
+  vec4 vertexPosition = projection * cameraPosition;
 
-  //discard;
-  vertexColor = vec4(1*(int(id)%3), 1*(int(id)%2), 1, 1);
-  vec3 position = vec3(pos.x / width,pos.y / height,pos.z);
-  gl_Position = vec4(position, 1.0);
-  gl_PointSize = mass*5;
+  float dist = 1-vertexPosition.z/6;
+  vColor = vec4((cameraPosition.x+1)*0.5*dist, (cameraPosition.y+1)*0.5*dist, dist, 1);
+
+  gl_Position = vertexPosition;
+  gl_PointSize = aMass;
 }

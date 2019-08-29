@@ -1,12 +1,12 @@
 import SNVK from "../temp_npm/vulkan.mjs"
 import Simulation from "./simulation.mjs"
 import Renderer from "./renderer.mjs"
-
+import glm from "gl-matrix";
 
 let snvk = new SNVK();
 let lastResize = 0;
 
-let count = 3;
+let count = 2000;
 
 snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
 snvk.startVulkan();
@@ -46,7 +46,29 @@ window.onresize = () => {
 eventLoop();
 
 function updateUniform(count,width,height) {
-  renderer.submitUniform({ count, width, height });
+  let { mat4, vec3 } = glm;
+
+  let cameraPosition = vec3.fromValues(4.0, 0.0, -2.0);
+  let view = mat4.create();
+  let projection = mat4.create();
+
+  
+  mat4.lookAt(
+    view,
+    cameraPosition,
+    vec3.fromValues(0.0, 0.0, 0.0),
+    vec3.fromValues(0.0, 0.0, 1.0)
+  );
+  mat4.perspective(
+    projection,
+    45.0 * Math.PI / 180,
+    width / height,
+    2.0,
+    6.0
+  );
+  
+  
+  renderer.submitUniform({ count, width, height, view, projection });
   simulation.submitUniform({ count });
 }
 
@@ -54,9 +76,9 @@ function createStars(count) {
   let stars = [];
   for (let i = 0; i < count; i++) {
     let star = {
-      pos: { x: Math.random()*800-400, y: Math.random()*800-400, z: 0 },
+      pos: { x: Math.random()*2-1, y: Math.random()*2-1, z: Math.random()*2-1 },
       vel: { x: 0, y: 0, z: 0 },
-      mass: 1,
+      mass: 10*Math.random()+1,
     }
     stars[i] = star;
   }

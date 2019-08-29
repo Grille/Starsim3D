@@ -66,13 +66,15 @@ export default class Simulation {
     }
     this.commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
 
+    let groupCount = Math.min(1000, this.count);
+
     snvk.cmdBegin(this.commandBuffer);
 
     snvk.cmdBindComputePipeline(this.commandBuffer, this.pipeline.pipeline);
-    snvk.cmdDispatch(this.commandBuffer, this.count);
+    snvk.cmdDispatch(this.commandBuffer, groupCount);
 
     snvk.cmdBindComputePipeline(this.commandBuffer, this.pipeline2.pipeline);
-    snvk.cmdDispatch(this.commandBuffer, this.count);
+    snvk.cmdDispatch(this.commandBuffer, groupCount);
 
     snvk.cmdEnd(this.commandBuffer);
   }

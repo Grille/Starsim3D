@@ -14,26 +14,26 @@ layout(binding = 0, std140) buffer buf {
 
 layout(binding = 1) uniform ub {
   uint count;
-  mat4 view;
-  mat4 projection;
 };
 
 void main() {
+  int workGroups = int(gl_NumWorkGroups.x);
+  int inovcationID = int(gl_GlobalInvocationID.x);
   //terminate unnecessary threads
-  if(gl_GlobalInvocationID.x >= count)
+  if(inovcationID >= count)
     return;
 
   //float x = float(gl_GlobalInvocationID.x) / float(COUNT);
   
-  int index = int(gl_GlobalInvocationID.x);
+  int index = int(inovcationID);
   Star star1 = stars[index];
+  //stars[index].vel.x+=0.1;
 
-  
   for (int i = index + 1; i < count; i++){
     Star star2 = stars[i];
 
     vec3 dist = star1.pos - star2.pos;
-
+    
     float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
     float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
@@ -43,6 +43,7 @@ void main() {
       stars[i].mass = 0.01;
     }
     */
+    
 
     vec3 fv = dist / distSum;
 
@@ -64,8 +65,11 @@ void main() {
 }
 
 void apply() {
+  int workGroups = int(gl_NumWorkGroups.x);
+  int inovcationID = int(gl_GlobalInvocationID.x);
+
   for (int i = 0; i < count; i++){
-    stars[i].pos += stars[i].vel * 1;
+    stars[i].pos += stars[i].vel * 0.0000000001;
     stars[i].id = i;
   }
 }
