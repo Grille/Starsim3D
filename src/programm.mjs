@@ -2,35 +2,28 @@ import SNVK from "../temp_npm/vulkan.mjs"
 import Simulation from "./simulation.mjs"
 import Renderer from "./renderer.mjs"
 
+
 let snvk = new SNVK();
 let lastResize = 0;
 
-let count = 1000;
+let count = 3;
 
 snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
 snvk.startVulkan();
 let {window} = snvk;
+
 let simulation = new Simulation(snvk);
 let renderer = new Renderer(snvk);
-
-let uniformData = new Uint8Array(32);
 
 let storageBufferCreateInfo = {
   size: 1E6 * 32,
   usage: snvk.BUFFER_USAGE_STORAGE | snvk.BUFFER_USAGE_VERTEX,
   readable: true,
 }
-let uniformBufferCreateInfo = {
-  size: uniformData.byteLength,
-  usage: snvk.BUFFER_USAGE_UNIFORM,
-}
 let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
-let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
 
-let buffers = { storageBuffer, uniformBuffer };
-
-simulation.setup(buffers);
-renderer.setup(buffers);
+simulation.setup(storageBuffer);
+renderer.setup(storageBuffer);
 
 updateUniform(count, window.width, window.height);
 createStars(count);
@@ -53,13 +46,8 @@ window.onresize = () => {
 eventLoop();
 
 function updateUniform(count,width,height) {
-  let uniformView = new DataView(uniformData.buffer);
-  uniformView.setUint32(0, count, true);
-  uniformView.setUint32(4, width, true);
-  uniformView.setUint32(8, height, true);
-  uniformView.setUint32(12, Math.min(count, 2000), true);
-
-  snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+  renderer.submitUniform({ count, width, height });
+  simulation.submitUniform({ count });
 }
 
 function createStars(count) {
