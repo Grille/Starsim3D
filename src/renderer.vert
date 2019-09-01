@@ -25,9 +25,10 @@ void main(){
   vec4 cameraPosition = view * vec4(aPosition, 1.0);
   vec4 vertexPosition = projection * cameraPosition;
 
-  float dist = 1-vertexPosition.z/6;
-  vColor = vec4((cameraPosition.x+1)*0.5*dist, (cameraPosition.y+1)*0.5*dist, dist, 1);
+  float dist = 1 - vertexPosition.z / 32;
+  vColor = vec4(1.2*dist, 1*dist, 1.5*dist, 1);
+  //vColor = vec4((cameraPosition.x+1)*0.5*dist, (cameraPosition.y+1)*0.5*dist, dist, 1);
 
   gl_Position = vertexPosition;
-  gl_PointSize = aMass;
+  gl_PointSize = max((aMass*10) / gl_Position.w, 1.5);
 }

@@ -6,7 +6,10 @@ import glm from "gl-matrix";
 let snvk = new SNVK();
 let lastResize = 0;
 
-let count = 2000;
+let count = 1000;
+
+let computeDate = Date.now();
+let renderDate = Date.now();
 
 snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
 snvk.startVulkan();
@@ -26,7 +29,18 @@ simulation.setup(storageBuffer);
 renderer.setup(storageBuffer);
 
 updateUniform(count, window.width, window.height);
-createStars(count);
+
+let starCreateInfo = {
+  count: count,
+  radius: 18,
+  position: {
+    x: 0, y: 0, z: 0,
+  },
+  scale: {
+    x: 1, y: 1, z: 0,
+  },
+}
+createStars(starCreateInfo);
 
 let date = Date.now();
 for (let i = 0;i<20;i++){
@@ -48,7 +62,7 @@ eventLoop();
 function updateUniform(count,width,height) {
   let { mat4, vec3 } = glm;
 
-  let cameraPosition = vec3.fromValues(4.0, 0.0, -2.0);
+  let cameraPosition = vec3.fromValues(20.0, 0.0, -10.0);
   let view = mat4.create();
   let projection = mat4.create();
 
@@ -61,10 +75,10 @@ function updateUniform(count,width,height) {
   );
   mat4.perspective(
     projection,
-    45.0 * Math.PI / 180,
+    60.0 * Math.PI / 180,
     width / height,
-    2.0,
-    6.0
+    1.0,
+    32.0
   );
   
   
@@ -72,13 +86,31 @@ function updateUniform(count,width,height) {
   simulation.submitUniform({ count });
 }
 
-function createStars(count) {
+function createStars(createInfo) {
+  let { count, radius, position, scale } = createInfo;
   let stars = [];
+  let r = radius;
+  let d = r * 2;
   for (let i = 0; i < count; i++) {
+    let x = 0, y = 0, z = 0;
+    while (true) {
+      x = Math.random() * d - r;
+      y = Math.random() * d - r;
+      z = Math.random() * d - r;
+      if (Math.sqrt(Math.abs(x * x) + Math.abs(y * y) + Math.abs(z * z)) < r) {
+        break;
+      }
+    }
+    x += position.x;
+    y += position.y;
+    z += position.z;
+    x *= scale.x;
+    y *= scale.y;
+    z *= scale.z;
     let star = {
-      pos: { x: Math.random()*2-1, y: Math.random()*2-1, z: Math.random()*2-1 },
+      pos: { x: x, y: y, z: z },
       vel: { x: 0, y: 0, z: 0 },
-      mass: 10*Math.random()+1,
+      mass: 10,
     }
     stars[i] = star;
   }
@@ -106,12 +138,14 @@ function eventLoop() {
   else {
     window.pollEvents();
     if (renderer.ready) {
-      let date = Date.now();
-      simulation.compute();
-      let sim = Date.now() - date;
-      window.title = "starsim3D: "+sim;
-      //renderer.pullData(simulation);
-      renderer.render();
+      if ((Date.now() - computeDate) > 10) {
+        computeDate = Date.now();
+        simulation.compute();
+      }
+      if ((Date.now() - renderDate) > 20) {
+        renderDate = Date.now();
+        renderer.render();
+      }
     }
     if (lastResize !== 0 && Date.now() - lastResize > 10 && (window.width > 0 && window.height > 0)) {
       lastResize = 0;

@@ -18,6 +18,7 @@ layout(binding = 1) uniform ub {
 
 void main() {
   int workGroups = int(gl_NumWorkGroups.x);
+  int workGroupSize = int(count / workGroups);
   int inovcationID = int(gl_GlobalInvocationID.x);
   //terminate unnecessary threads
   if(inovcationID >= count)
@@ -38,12 +39,11 @@ void main() {
     float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
     /*
-    if (distAbs < 20){
+    if (distAbs < 20) {
       stars[index].mass += stars[i].mass;
       stars[i].mass = 0.01;
     }
     */
-    
 
     vec3 fv = dist / distSum;
 
@@ -55,7 +55,7 @@ void main() {
     stars[i].vel += fv * a2;
   }
 
-  if (index == count - 1){
+  if (index == count - 1) {
 
   }
   //stars[index].vel = vec3(2,4,2);
