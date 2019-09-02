@@ -5,8 +5,7 @@
     "start": "node --experimental-modules ./src/programm.mjs"
   },
   "dependencies": {
-    "nvk": "latest",
-    "nvk-essentials": "latest",
+    "simple-nvk": "latest",
     "gl-matrix": "^2.8.1"
   },
   "author": "paul hirch",

@@ -1,4 +1,4 @@
-import SNVK from "../temp_npm/vulkan.mjs"
+import SNVK from "simple-nvk"
 import Simulation from "./simulation.mjs"
 import Renderer from "./renderer.mjs"
 import glm from "gl-matrix";
