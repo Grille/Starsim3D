@@ -11,7 +11,7 @@ export default class Programm{
 
     this.lastResize = 0;
     
-    this.count = 1000;
+    this.count = 4000;
     
     this.computeDate = Date.now();
     this.renderDate = Date.now();
@@ -42,7 +42,7 @@ export default class Programm{
         x: 0, y: 0, z: 0,
       },
       scale: {
-        x: 1, y: 1, z: 0,
+        x: 1, y: 1, z: 1,
       },
     }
     this.createStars(starCreateInfo);

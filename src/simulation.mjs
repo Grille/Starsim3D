@@ -61,7 +61,7 @@ export default class Simulation {
     }
     this.commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
 
-    let groupCount = Math.min(1000, this.count);
+    let groupCount = Math.min(1024, this.count);
 
     snvk.cmdBegin(this.commandBuffer);
 

@@ -17,59 +17,59 @@ layout(binding = 1) uniform ub {
 };
 
 void main() {
-  int workGroups = int(gl_NumWorkGroups.x);
-  int workGroupSize = int(count / workGroups);
-  int inovcationID = int(gl_GlobalInvocationID.x);
-  //terminate unnecessary threads
-  if(inovcationID >= count)
-    return;
+  float groupIndex = gl_GlobalInvocationID.x;
+  float groupSize = count / float(gl_NumWorkGroups.x);
 
-  //float x = float(gl_GlobalInvocationID.x) / float(COUNT);
+  int begin = int(groupIndex * groupSize);
+  int end = int((groupIndex + 1) * groupSize);
+
+  for (int i1 = begin; i1 < end; i1++){
+    Star star1 = stars[i1];
+
+    for (int i2 = 0; i2 < count; i2++){
+      if (i1 == i2) continue;
+
+      Star star2 = stars[i2];
+
+vec3 r = p2.xyz - p1.xyz;
+  float dist_sqr = dot(r,r) + EPS2;
+  float dist_sixth = dist_sqr*dist_sqr*dist_sqr;
+  float inv_dist_cube = inversesqrt(dist_sixth);
+  return r*inv_dist_cube;
   
-  int index = int(inovcationID);
-  Star star1 = stars[index];
-  //stars[index].vel.x+=0.1;
+      vec3 dist = star1.pos - star2.pos;
+      
+      float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
+      float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
-  for (int i = index + 1; i < count; i++){
-    Star star2 = stars[i];
+      /*
+      if (distAbs < 20) {
+        stars[index].mass += stars[i].mass;
+        stars[i].mass = 0.01;
+      }
+      */
+      
+      vec3 fv = dist / distSum;
 
-    vec3 dist = star1.pos - star2.pos;
-    
-    float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
-    float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
+      float fg = star1.mass * star2.mass / distAbs;
+      float a1 = fg / star1.mass;
+      float a2 = fg / star2.mass;
 
-    /*
-    if (distAbs < 20) {
-      stars[index].mass += stars[i].mass;
-      stars[i].mass = 0.01;
+      stars[i1].vel -= fv * a1;
+      //stars[i2].vel += fv * a2;
     }
-    */
-
-    vec3 fv = dist / distSum;
-
-    float fg = star1.mass * star2.mass / distAbs;
-    float a1 = fg / star1.mass;
-    float a2 = fg / star2.mass;
-
-    stars[index].vel -= fv * a1 ;
-    stars[i].vel += fv * a2;
   }
-
-  if (index == count - 1) {
-
-  }
-  //stars[index].vel = vec3(2,4,2);
-  //stars[index].mass = 9.;
-  // store the rendered mandelbrot set into a storage buffer:
-  //imageData[COUNT * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x].value = color;
 }
 
 void apply() {
-  int workGroups = int(gl_NumWorkGroups.x);
-  int inovcationID = int(gl_GlobalInvocationID.x);
+  float groupIndex = gl_GlobalInvocationID.x;
+  float groupSize = count / float(gl_NumWorkGroups.x);
 
-  for (int i = 0; i < count; i++){
-    stars[i].pos += stars[i].vel * 0.0000000001;
+  int begin = int(groupIndex * groupSize);
+  int end = int((groupIndex + 1) * groupSize);
+
+  for (int i = begin; i < end; i++){
+    stars[i].pos += stars[i].vel * 1e-6;
     stars[i].id = i;
   }
 }
