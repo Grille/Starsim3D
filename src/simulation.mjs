@@ -21,13 +21,8 @@ export default class Simulation {
     let { snvk } = this;
 
     let source = fs.readFileSync("./src/simulation.comp", "utf8");
-
-    let uniformBufferCreateInfo = {
-      size: 16,
-      usage: snvk.BUFFER_USAGE_UNIFORM,
-    }
-
-    this.uniform.create(256);
+    
+    this.uniform.create(16);
     let uniformDescriptor = this.uniform.descriptor;
 
     this.storageBuffer = storageBuffer;
