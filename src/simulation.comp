@@ -3,7 +3,7 @@
 
 struct Star {
   vec3 pos;
-  float id;
+  float empety;
   vec3 vel;
   float mass;
 };
@@ -41,14 +41,14 @@ void interaction() {
       float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
       float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
-      vec3 fv = dist / distSum;
+      vec3 forceProportion = dist / distSum;
 
-      float fg = star1.mass * star2.mass / distAbs;
-      float a1 = fg / star1.mass;
-      float a2 = fg / star2.mass;
+      float attraction = star1.mass * star2.mass / distAbs;
+      float attraction1 = attraction / star1.mass;
+      float attraction2 = attraction / star2.mass;
 
-      stars[i1].vel -= fv * a1 ;
-      stars[i2].vel += fv * a2 ;
+      stars[i1].vel -= forceProportion * attraction1 ;
+      stars[i2].vel += forceProportion * attraction2 ;
     }
   }
 }
@@ -62,7 +62,6 @@ void integration() {
 
   for (int i = begin; i < end; i++){
     stars[i].pos += stars[i].vel * 1e-6;
-    stars[i].id = i;
   }
 }
 
