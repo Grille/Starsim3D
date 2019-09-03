@@ -1,7 +1,6 @@
 import Uniform from "./uniform.mjs";
 import fs from "fs";
 
-
 export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
@@ -30,8 +29,8 @@ export default class Simulation {
 
     let descriptors = [stroageDescriptor, uniformDescriptor];
 
-    this.pipeline = this.createPipeline(descriptors, source, "main");
-    this.pipeline2 = this.createPipeline(descriptors, source, "apply");
+    this.pipelineInteraction = this.createPipeline(descriptors, source, "interaction");
+    this.pipelineIntegration = this.createPipeline(descriptors, source, "integration");
 
     this.running = snvk.createFence();
   }
@@ -65,10 +64,10 @@ export default class Simulation {
 
     snvk.cmdBegin(this.commandBuffer);
 
-    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipeline.pipeline);
+    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipelineInteraction);
     snvk.cmdDispatch(this.commandBuffer, groupCount);
 
-    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipeline2.pipeline);
+    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipelineIntegration);
     snvk.cmdDispatch(this.commandBuffer, groupCount);
 
     snvk.cmdEnd(this.commandBuffer);
@@ -130,11 +129,9 @@ export default class Simulation {
       descriptors: descriptors,
     }
     let pipeline = snvk.createComputePipeline(computePipelineCreateInfo);
+    pipeline.shader = shader;
 
-    return {
-      pipeline,
-      shader,
-    }
+    return pipeline;
   }
 
   shutdown() {
@@ -145,9 +142,11 @@ export default class Simulation {
     //snvk.waitForFence(this.running, 60 * 1E3);
     snvk.destroyFence(this.running);
     snvk.destroyCommandBuffer(this.commandBuffer);
-    snvk.destroyComputePipeline(this.pipeline.pipeline);
+    snvk.destroyComputePipeline(this.pipelineInteraction);
+    snvk.destroyComputePipeline(this.pipelineIntegration);
     snvk.destroyBuffer(this.storageBuffer);
-    snvk.destroyShader(this.pipeline.shader);
+    snvk.destroyShader(this.pipelineInteraction.shader);
+    snvk.destroyShader(this.pipelineIntegration.shader);
   }
 
 }

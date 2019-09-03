@@ -16,52 +16,44 @@ layout(binding = 1) uniform ub {
   uint count;
 };
 
-void main() {
+void interaction() {
+  float groupCount = gl_NumWorkGroups.x;
   float groupIndex = gl_GlobalInvocationID.x;
-  float groupSize = count / float(gl_NumWorkGroups.x);
+  float groupInvIndex = groupCount - groupIndex;
 
-  int begin = int(groupIndex * groupSize);
-  int end = int((groupIndex + 1) * groupSize);
+  float smothFactor = 0.5 + (1 - ((10 / groupCount))) / 10;
+  float groupScaleBegin = (1 / (groupInvIndex + 1)) * smothFactor + smothFactor;
+  float groupScaleEnd = (1 / (groupInvIndex)) * smothFactor + smothFactor;
+
+  float groupSize = count / groupCount * 1.5;
+
+  int begin = int(groupIndex * groupSize * groupScaleBegin);
+  int end = int((groupIndex + 1) * groupSize * groupScaleEnd);
 
   for (int i1 = begin; i1 < end; i1++){
     Star star1 = stars[i1];
 
-    for (int i2 = 0; i2 < count; i2++){
-      if (i1 == i2) continue;
-
+    for (int i2 = i1+1; i2 < count; i2++){
       Star star2 = stars[i2];
 
-vec3 r = p2.xyz - p1.xyz;
-  float dist_sqr = dot(r,r) + EPS2;
-  float dist_sixth = dist_sqr*dist_sqr*dist_sqr;
-  float inv_dist_cube = inversesqrt(dist_sixth);
-  return r*inv_dist_cube;
-  
       vec3 dist = star1.pos - star2.pos;
       
       float distSum = abs(dist.x) + abs(dist.y) + abs(dist.z);
       float distAbs = sqrt(dist.x * dist.x + dist.y * dist.y + dist.z * dist.z);
 
-      /*
-      if (distAbs < 20) {
-        stars[index].mass += stars[i].mass;
-        stars[i].mass = 0.01;
-      }
-      */
-      
       vec3 fv = dist / distSum;
 
       float fg = star1.mass * star2.mass / distAbs;
       float a1 = fg / star1.mass;
       float a2 = fg / star2.mass;
 
-      stars[i1].vel -= fv * a1;
-      //stars[i2].vel += fv * a2;
+      stars[i1].vel -= fv * a1 ;
+      stars[i2].vel += fv * a2 ;
     }
   }
 }
 
-void apply() {
+void integration() {
   float groupIndex = gl_GlobalInvocationID.x;
   float groupSize = count / float(gl_NumWorkGroups.x);
 
