@@ -4,11 +4,10 @@ import fs from "fs";
 export default class Simulation {
   constructor(snvk) {
     this.snvk = snvk;
-    this.uniformBuffer = null;
     this.storageBuffer = null;
     this.commandBuffer = null;
-    this.computeShader = null;
-    this.computePipeline = null;
+    this.pipelineInteraction = null;
+    this.pipelineIntegration = null;
     this.count = 4000;
 
     this.running = null;
