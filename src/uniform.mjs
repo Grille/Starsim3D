@@ -1,14 +1,14 @@
+import snvk from "simple-nvk";
+
 export default class Uniform{
-  constructor(snvk) {
-    this.snvk = snvk;
+  constructor(device) {
+    this.device = device;
     this.data = null;
     this.view = null;
     this.buffer = null;
     this.descriptor = null;
   }
-  create(size){
-    let {snvk} = this;
-
+  create(size) {
     this.data = new Uint8Array(size);
     this.view = new DataView(this.data.buffer);
 
@@ -17,8 +17,8 @@ export default class Uniform{
       usage: snvk.BUFFER_USAGE_UNIFORM,
     }
 
-    this.buffer = snvk.createBuffer(uniformBufferCreateInfo);
-    this.descriptor = snvk.getDescriptor(this.buffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
+    this.buffer = this.device.createBuffer(uniformBufferCreateInfo);
+    this.descriptor = this.buffer.getDescriptor(1, snvk.DESCRIPTOR_TYPE_UNIFORM);
   }
   setUint32(offset, value) {
     this.view.setUint32(offset, value, true);
@@ -30,14 +30,10 @@ export default class Uniform{
     this.data.set(new Uint8Array(value.buffer), offset);
   }
   submit() {
-    let {snvk} = this;
-
-    snvk.bufferSubData(this.buffer, 0, this.data, 0, this.data.byteLength);
+    this.buffer.subData(0, this.data, 0, this.data.byteLength);
   }
   destroy() {
-    let {snvk} = this;
-
-    snvk.destroyBuffer(this.buffer);
+    this.buffer.destroy();
   }
 }
 

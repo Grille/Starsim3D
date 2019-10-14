@@ -1,23 +1,22 @@
-import SNVK from "simple-nvk"
+import snvk from "simple-nvk"
 import Simulation from "./simulation.mjs"
 import Renderer from "./renderer.mjs"
 import glm from "gl-matrix";
 
 export default class Programm{
   constructor(){
-    this.snvk = new SNVK();
-
-    let {snvk} = this;
-
     this.lastResize = 0;
     
+    snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
+    snvk.startVulkan();
+
+    this.device = snvk.createDevice();
+
     this.count = 5000;
     
     this.computeDate = Date.now();
     this.renderDate = Date.now();
     
-    snvk.startWindow({ width: 800, height: 600, title: "Starsim-3D" });
-    snvk.startVulkan();
     this.window = snvk.window;
     
     let storageBufferCreateInfo = {
@@ -25,10 +24,10 @@ export default class Programm{
       usage: snvk.BUFFER_USAGE_STORAGE | snvk.BUFFER_USAGE_VERTEX,
       readable: true,
     }
-    this.storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
+    this.storageBuffer = this.device.createBuffer(storageBufferCreateInfo);
     
-    this.simulation = new Simulation(snvk);
-    this.renderer = new Renderer(snvk);
+    this.simulation = new Simulation(this.device);
+    this.renderer = new Renderer(this.device);
     
     this.simulation.setup(this.storageBuffer);
     this.renderer.setup(this.storageBuffer);
@@ -132,14 +131,14 @@ export default class Programm{
     this.simulation.shutdown();
     this.renderer.shutdown();
     
-    this.snvk.shutdownVulkan();
+    this.device.shutdownVulkan();
   }
 
   eventLoop() {
     if (this.window.shouldClose()) {
       this.simulation.shutdown();
       this.renderer.shutdown();
-      this.snvk.shutdownVulkan();
+      this.device.shutdownVulkan();
     }
     else {
       this.window.pollEvents();

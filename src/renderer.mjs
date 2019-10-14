@@ -1,8 +1,10 @@
+import snvk from "simple-nvk";
+import fs from "fs";
 import Uniform from "./uniform.mjs";
 
 export default class Renderer{
-  constructor(snvk){
-    this.snvk = snvk;
+  constructor(device){
+    this.device = device;
     this.window = snvk.window;
     this.surface = null;
 
@@ -31,38 +33,38 @@ export default class Renderer{
 
     this.ready = false;
 
-    this.uniform = new Uniform(snvk);
+    this.uniform = new Uniform(device);
   }
 
   setup(vertexBuffer) {
-    let { snvk } = this;
+    let { device } = this;
 
-    let vertSource = snvk.loadShaderSrc(`./src/renderer.vert`);
+    let vertSource = fs.readFileSync(`./src/renderer.vert`);
     let vertCreateInfo = {
       source: vertSource,
       format: snvk.SHADER_SRC_GLSL,
       stage: snvk.SHADER_STAGE_VERTEX,
     }
-    this.vertShader = snvk.createShader(vertCreateInfo);
+    this.vertShader = device.createShader(vertCreateInfo);
 
-    let fragSource = snvk.loadShaderSrc(`./src/renderer.frag`);
+    let fragSource = fs.readFileSync(`./src/renderer.frag`);
     let fragCreateInfo = {
       source: fragSource,
       format: snvk.SHADER_SRC_GLSL,
       stage: snvk.SHADER_STAGE_FRAGMENT,
     }
-    this.fragShader = snvk.createShader(fragCreateInfo);
+    this.fragShader = device.createShader(fragCreateInfo);
 
     this.uniform.create(256);
     this.uniformDescriptor = this.uniform.descriptor;
 
     this.vertexBuffer = vertexBuffer;
-    this.vertexBinding = snvk.getBinding(this.vertexBuffer, 0, 32);
+    this.vertexBinding = this.vertexBuffer.getBinding(0, 32);
     this.attributes = [
-      snvk.getAttribute(this.vertexBinding, 0, snvk.TYPE_FLOAT32, 3, 0 * 0), //position
-      snvk.getAttribute(this.vertexBinding, 1, snvk.TYPE_FLOAT32, 1, 4 * 3), //enabled
-      snvk.getAttribute(this.vertexBinding, 2, snvk.TYPE_FLOAT32, 3, 4 * 4), //velocity
-      snvk.getAttribute(this.vertexBinding, 3, snvk.TYPE_FLOAT32, 1, 4 * 7), //mass
+      this.vertexBinding.getAttribute(0, snvk.TYPE_FLOAT32, 3, 0 * 0), //position
+      this.vertexBinding.getAttribute(1, snvk.TYPE_FLOAT32, 1, 4 * 3), //enabled
+      this.vertexBinding.getAttribute(2, snvk.TYPE_FLOAT32, 3, 4 * 4), //velocity
+      this.vertexBinding.getAttribute(3, snvk.TYPE_FLOAT32, 1, 4 * 7), //mass
     ]
 
   }
@@ -83,9 +85,12 @@ export default class Renderer{
   }
 
   createPipeline(count) {
-    let { snvk } = this;
+    let { device,window } = this;
 
-    this.renderPass = snvk.createRenderPass();
+    let renderPassCreateInfo = {
+      backgroundColor: [0, 0, 0.0, 1],
+    }
+    this.renderPass = device.createRenderPass(renderPassCreateInfo);
 
     let assemblyInfo = {
       topology: snvk.TOPOLOGY_POINT_LIST,
@@ -101,16 +106,16 @@ export default class Renderer{
       rasterizationInfo: rasterizationInfo,
       blendingInfo: blendingInfo,
       renderPass: this.renderPass,
-      viewport: snvk.createViewport(),
+      viewport: device.createViewport(snvk),
       shaders: [this.vertShader, this.fragShader],
       bindings: [this.vertexBinding],
       attributes: [...this.attributes],
       descriptors: [this.uniformDescriptor],
       backgroundColor: [0, 0, 0.0, 1],
     }
-    this.renderPipeline = snvk.createRenderPipeline(pipelineCreateInfo);
+    this.renderPipeline = device.createRenderPipeline(pipelineCreateInfo);
 
-    this.surface = snvk.createSurface();
+    this.surface = device.createSurface({ window });
 
     let swapchainCreateInfo = {
       width: this.window.width,
@@ -118,10 +123,10 @@ export default class Renderer{
       renderPass: this.renderPass,
       surface: this.surface,
     }
-    this.swapchain = snvk.createSwapchain(swapchainCreateInfo);
+    this.swapchain = device.createSwapchain(swapchainCreateInfo);
 
-    this.frameAvailable = snvk.createSemaphore();
-    this.renderAvailable = snvk.createSemaphore();
+    this.frameAvailable = device.createSemaphore();
+    this.renderAvailable = device.createSemaphore();
 
     this.commandbuffers = [];
     for (let i = 0; i < this.swapchain.framebuffers.length; i++) {
@@ -131,17 +136,17 @@ export default class Renderer{
         level: snvk.COMMAND_LEVEL_PRIMARY,
         usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
       }
-      let command = snvk.createCommandBuffer(commandCreateInfo);
+      let command = device.createCommandBuffer(commandCreateInfo);
 
-      snvk.cmdBegin(command);
+      command.begin();
+      command.bindRenderPipeline(this.renderPipeline);
+      command.beginRender(this.renderPass, framebuffer);
 
-      snvk.cmdBeginRender(command, this.renderPipeline, framebuffer);
+      command.drawArrays(0, count);
 
-      snvk.cmdDrawArrays(command, 0, count);
+      command.endRender();
 
-      snvk.cmdEndRender(command);
-
-      snvk.cmdEnd(command);
+      command.end();
 
       this.commandbuffers[i] = command;
     }
@@ -149,53 +154,53 @@ export default class Renderer{
   }
 
   destroyPipeline() {
-    let { snvk } = this;
+    let { device } = this;
 
-    snvk.waitForIdle();
+    device.waitIdle();
 
     for (let i = 0; i < this.commandbuffers.length; i++) {
-      snvk.destroyCommandBuffer(this.commandbuffers[i]);
+      this.commandbuffers[i].destroy();
     }
 
-    snvk.destroySemaphore(this.frameAvailable);
-    snvk.destroySemaphore(this.renderAvailable);
+    this.frameAvailable.destroy();
+    this.renderAvailable.destroy();
 
-    snvk.destroySwapchain(this.swapchain);
-    snvk.destroySurface(this.surface);
+    this.swapchain.destroy();
+    this.surface.destroy();
 
-    snvk.destroyRenderPipeline(this.renderPipeline);
-    snvk.destroyRenderPass(this.renderPass);
+    this.renderPipeline.destroy();
+    this.renderPass.destroy();
 
     this.ready = false;
   }
 
   pullData(simulation) {
-    let { snvk } = this;
+    let { device } = this;
 
     let size = simulation.storageBuffer.size;
-    snvk.copyBuffer(simulation.storageBuffer, 0, this.vertexBuffer, 0, size);
+    device.copyBuffer(simulation.storageBuffer, 0, this.vertexBuffer, 0, size);
   }
 
   render() {
-    let { snvk } = this;
+    let { device } = this;
 
-    let index = snvk.getNextSwapchainIndex(this.swapchain, this.frameAvailable);
+    let index = this.swapchain.getNextIndex(this.frameAvailable);
     let command = this.commandbuffers[index];
     let submitInfo = {
       waitSemaphore: this.frameAvailable,
       signalSemaphore: this.renderAvailable,
       commandBuffer: command,
     }
-    snvk.submit(submitInfo);
-    snvk.present(this.swapchain, this.renderAvailable);
+    device.submit(submitInfo);
+    this.swapchain.present(this.renderAvailable);
   }
 
   recreate() { }
 
   shutdown() {
-    let { snvk } = this;
+    let { device } = this;
 
-    snvk.destroyBuffer(this.vertexBuffer);
+    this.vertexBuffer.destroy();
   }
 
 }

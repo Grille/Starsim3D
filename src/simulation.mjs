@@ -1,9 +1,10 @@
+import snvk from "simple-nvk";
 import Uniform from "./uniform.mjs";
 import fs from "fs";
 
 export default class Simulation {
-  constructor(snvk) {
-    this.snvk = snvk;
+  constructor(device) {
+    this.device = device;
     this.storageBuffer = null;
     this.commandBuffer = null;
     this.pipelineInteraction = null;
@@ -12,11 +13,11 @@ export default class Simulation {
 
     this.running = null;
 
-    this.uniform = new Uniform(snvk);
+    this.uniform = new Uniform(device);
   }
 
   setup(storageBuffer) {
-    let { snvk } = this;
+    let { device } = this;
 
     let source = fs.readFileSync("./src/simulation.comp", "utf8");
     
@@ -24,14 +25,14 @@ export default class Simulation {
     let uniformDescriptor = this.uniform.descriptor;
 
     this.storageBuffer = storageBuffer;
-    let stroageDescriptor = snvk.getDescriptor(this.storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE);
+    let stroageDescriptor = this.storageBuffer.getDescriptor(0, snvk.DESCRIPTOR_TYPE_STORAGE);
 
     let descriptors = [stroageDescriptor, uniformDescriptor];
 
     this.pipelineInteraction = this.createPipeline(descriptors, source, "interaction");
     this.pipelineIntegration = this.createPipeline(descriptors, source, "integration");
 
-    this.running = snvk.createFence();
+    this.running = device.createFence();
   }
 
   submitUniform(input) {
@@ -43,47 +44,48 @@ export default class Simulation {
   }
 
   createCommand(count) {
-    let { snvk } = this;
+    let { device } = this;
 
     this.count = count;
 
     if (this.commandBuffer !== null) {
-      snvk.waitForIdle();
-      snvk.waitForFence(this.running, 60 * 1E3);
-      snvk.destroyCommandBuffer(this.commandBuffer);
+      device.waitForIdle();
+      device.waitForFence(this.running, 60 * 1E3);
+      this.commandBuffer.destroy();
     }
 
     let commandCreateInfo = {
       level: snvk.COMMAND_LEVEL_PRIMARY,
       usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
     }
-    this.commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
 
     let groupCount = Math.min(1024, this.count);
 
-    snvk.cmdBegin(this.commandBuffer);
+    this.commandBuffer = device.createCommandBuffer(commandCreateInfo);
 
-    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipelineInteraction);
-    snvk.cmdDispatch(this.commandBuffer, groupCount);
+    this.commandBuffer.begin();
 
-    snvk.cmdBindComputePipeline(this.commandBuffer, this.pipelineIntegration);
-    snvk.cmdDispatch(this.commandBuffer, groupCount);
+    this.commandBuffer.bindComputePipeline(this.pipelineInteraction);
+    this.commandBuffer.dispatch(groupCount);
 
-    snvk.cmdEnd(this.commandBuffer);
+    this.commandBuffer.bindComputePipeline(this.pipelineIntegration);
+    this.commandBuffer.dispatch(groupCount);
+
+    this.commandBuffer.end();
   }
 
   compute() {
-    let { snvk } = this;
+    let { device } = this;
 
     let submitInfo = {
       commandBuffer: this.commandBuffer,
       blocking: false,
     }
-    snvk.submit(submitInfo);
+    device.submit(submitInfo);
   }
 
   pushStars(stars) {
-    let { snvk } = this;
+    let { device } = this;
 
     this.count = stars.length;
     let data = new Float32Array(stars.length * 8);
@@ -97,17 +99,17 @@ export default class Simulation {
       data[offset + 6] = stars[i].vel.z;
       data[offset + 7] = stars[i].mass;
     }
-    snvk.bufferSubData(this.storageBuffer, 0, data, 0, this.count * 32);
+    this.storageBuffer.subData(0, data, 0, this.count * 32);
   }
 
   readData() {
-    let { snvk } = this;
+    let { device } = this;
 
-    return new Float32Array(snvk.bufferReadData(this.storageBuffer, 0, this.count * 32));
+    return new Float32Array(this.storageBuffer.readData(0, this.count * 32));
   }
 
   createPipeline(descriptors, source, entryPoint) {
-    let { snvk } = this;
+    let { device } = this;
 
     let code = source;
     if (entryPoint !== "main") {
@@ -121,31 +123,31 @@ export default class Simulation {
       format: snvk.SHADER_SRC_GLSL,
       stage: snvk.SHADER_STAGE_COMPUTE,
     }
-    let shader = snvk.createShader(compCreateInfo);
+    let shader = device.createShader(compCreateInfo);
 
     let computePipelineCreateInfo = {
       shader: shader,
       descriptors: descriptors,
     }
-    let pipeline = snvk.createComputePipeline(computePipelineCreateInfo);
+    let pipeline = device.createComputePipeline(computePipelineCreateInfo);
     pipeline.shader = shader;
 
     return pipeline;
   }
 
   shutdown() {
-    let { snvk } = this;
+    let { device } = this;
 
-    snvk.waitForIdle();
+    device.waitIdle();
 
     //snvk.waitForFence(this.running, 60 * 1E3);
-    snvk.destroyFence(this.running);
-    snvk.destroyCommandBuffer(this.commandBuffer);
-    snvk.destroyComputePipeline(this.pipelineInteraction);
-    snvk.destroyComputePipeline(this.pipelineIntegration);
-    snvk.destroyBuffer(this.storageBuffer);
-    snvk.destroyShader(this.pipelineInteraction.shader);
-    snvk.destroyShader(this.pipelineIntegration.shader);
+    this.running.destroy();
+    this.commandBuffer.destroy();
+    this.pipelineInteraction.destroy();
+    this.pipelineIntegration.destroy();
+    this.storageBuffer.destroy();
+    this.pipelineInteraction.shader.destroy();
+    this.pipelineIntegration.shader.destroy();
   }
 
 }
